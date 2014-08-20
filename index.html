@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <script type='text/javascript' src='jimage.js'></script>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+    <style>
+        body {
+            background: #808080;
+            color: #bbb;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        .main {
+            width: 60%;
+            margin: 0 auto;
+        }
+
+        #logo {
+            margin: 0 auto;
+            display: block;
+        }
+
+        a {
+            color: yellow;
+        }
+
+        .example pre {
+            margin-bottom: 0;
+            background: #bbb;
+            color: #808080;
+            font-size: 12px;
+            padding: 2px 0 2px 15px;
+            line-height: 18px;
+            overflow-y: scroll;
+        }
+
+        .example .result {
+            margin-top: 0;
+            padding: 20px;
+            border-right: 1px dotted #bbb;;
+            border-bottom: 1px dotted #bbb;;
+            border-left: 1px dotted #bbb;;
+        }
+
+    </style>
+</head>
+
+    <body>
+        <div class='main'>
+            <canvas id='logo'></canvas>
+            <div class="example">
+                <a href="https://github.com/heldtalex/jimage">github</a>
+
+                <p>
+                    Jimage is a small library that reads image data and converts
+                    it to JSON. The Jimage can then later be drawn in a canvas
+                    element.
+                </p>
+
+                <p>
+                    As an example this image <img src='banana.png' /> will be
+                    used to draw a few scaled up versions of it.
+
+                    First a Jimage is created from the image:
+                </p>
+
+<pre>
+    banana = new Jimage('banana.png');
+</pre>
+            </div>
+
+            <div class="example">
+                <p>
+                    The created Jimage can now be used to draw the Jimage when
+                    it is loaded. If a canvas element is specified that element
+                    will be used to draw the image, otherwise an element will
+                    be created:
+                </p>
+
+<pre>
+<code>
+    banana.element.addEventListener('loaded', function() {
+        banana.draw({element: 'to-scale'});
+        banana.draw({element: 'x3', scale: 3});
+    }, false);
+</code>
+</pre>
+
+                <div class="result">
+                    <canvas id='to-scale'></canvas>
+                    <canvas id='x3'></canvas>
+                </div>
+            </div>
+
+            <div class="example">
+                <p>
+                    It is also possible to export the Jimage for later use:
+                </p>
+
+<pre>
+<code>
+    exportedBanana = banana.export();
+    newBanana = new Jimage(exportedBanana, {element: 'x10', scale: 10});
+</code>
+</pre>
+
+            </div>
+
+            <div class="example">
+                <p>
+                    The Jimage can be drawn either as is, inverted or with a
+                    passed function that modifies each pixels RGBA values:
+                </p>
+
+<pre>
+<code>
+    newBanana.draw({mode: 'inverted'});
+
+    newBanana.draw({element: 'tomatoBanana', scale: 15, mode: function(pixel) {
+        return {
+            r: pixel.r,
+            g: 100 - pixel.g,
+            b: pixel.b,
+            a: pixel.a,
+        };
+    }});
+</code>
+</pre>
+
+                <div class="result">
+                    <canvas id='x10'></canvas>
+                    <canvas id='tomatoBanana'></canvas>
+                </div>
+            </div>
+        </div>
+    </body>
+
+    <script>
+        logo = new Jimage('logo.png', {element: 'logo', scale: '20'});
+        logo.element.addEventListener('loaded', function() {logo.draw();}, false);
+    </script>
+
+    <script>
+        banana = new Jimage('banana.png');
+
+        banana.element.addEventListener('loaded', function() {
+            window.exportedBanana = banana.export();
+
+            newBanana = new Jimage(exportedBanana, {element: 'x10', scale: 10});
+
+            banana.draw({element: 'to-scale'});
+            banana.draw({element: 'x3', scale: 3});
+
+            newBanana.draw({mode: 'inverted'});
+            newBanana.draw({element: 'tomatoBanana', scale: 15, mode: function(pixel) {
+                return {
+                    r: pixel.r,
+                    g: 100 - pixel.g,
+                    b: pixel.b,
+                    a: pixel.a,
+                };
+            }});
+        }, false);
+    </script>
+</html>
