@@ -8,7 +8,7 @@ module.exports = (grunt) ->
 
         watch:
             scripts:
-                files: ['jimage.coffee']
+                files: ['src/jimage.coffee']
                 tasks: ['coffee']
 
     grunt.loadNpmTasks 'grunt-contrib-coffee'
