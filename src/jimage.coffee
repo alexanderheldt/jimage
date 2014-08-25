@@ -39,7 +39,7 @@ class Jimage
         @events =
             loaded: new Event 'loaded'
 
-        @_load @src
+        load.call this, @src
 
     ###
         Predefined modes for drawing the image. These "modes" alter each channel
@@ -47,7 +47,7 @@ class Jimage
 
         @return {Object}
     ###
-    modes:
+    modes =
         normal: (pixel) ->
             r: pixel.r
             g: pixel.g
@@ -65,7 +65,7 @@ class Jimage
         already created Jimage. Once the image is loaded the `loaded` event will
         trigger.
     ###
-    _load: (src) ->
+    load = (src) ->
         if typeof src is 'object'
             @src = src.src
             @width = src.width
@@ -81,39 +81,42 @@ class Jimage
             img.onload = (e) =>
                 img = e.target
                 context.drawImage img, 0, 0
+                data = context.getImageData(0, 0, img.width, img.height).data
+
                 @width = img.width
                 @height = img.height
-                @_data = context.getImageData(0, 0, img.width, img.height).data
-                @pixels = @_extractPixels()
+                @pixels = extractPixels data, @width
 
                 @element.dispatchEvent @events.loaded
 
-            img.src = @src
+            img.src = src
         return
 
-    _extractPixels: ->
+    extractPixels = (data, width) ->
         pixels = []
         x = y = 0
 
-        for _, i in @_data by 4
+        for _, i in data by 4
             pixels.push
                 x: x
                 y: y
-                r: @_data[i]
-                g: @_data[i+1]
-                b: @_data[i+2]
-                a: @_data[i+3]
+                r: data[i]
+                g: data[i+1]
+                b: data[i+2]
+                a: data[i+3]
 
             x += 1
 
             # Move down one row in the image when we hit the edge
-            if x is @width then x = 0; y += 1
+            if x is width
+                x = 0
+                y += 1
 
         return pixels
 
-    _mode: (mode) ->
-        if mode of @modes
-            mode = @modes[mode]
+    getMode = (mode) ->
+        if mode of modes
+            mode = modes[mode]
         else if typeof mode is 'function'
             mode = mode
         else
@@ -133,7 +136,7 @@ class Jimage
         throw new Error "Canvas \"#{element}\" is invalid." unless canvas?
 
         scale = options.scale
-        mode = @_mode options.mode
+        mode = getMode options.mode
 
         canvas.height = @height * scale
         canvas.width = @width * scale
