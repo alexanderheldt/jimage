@@ -13,6 +13,8 @@ Jimage = (function() {
           @param {String|Function} mode - which mode the image will be drawn
           with. Can be either a string or a function.]
    */
+  var extractPixels, getMode, load, modes;
+
   function Jimage(src, options) {
     var canvas, key, value, _ref;
     this.src = src;
@@ -21,28 +23,15 @@ Jimage = (function() {
       scale: 1,
       mode: 'normal'
     };
-
-    /*
-        Overwrite default options with passed options
-     */
     for (key in options) {
       value = options[key];
       this.options[key] = value;
     }
-
-    /*
-        Set properties from options
-     */
     _ref = this.options;
     for (key in _ref) {
       value = _ref[key];
       this[key] = value;
     }
-
-    /*
-        If `options.element` is passed then that will be used, else an
-        canvas element will be created.
-     */
     if (!(this.element = document.getElementById(this.options.element))) {
       canvas = document.createElement('canvas');
       document.body.appendChild(canvas);
@@ -51,18 +40,10 @@ Jimage = (function() {
     this.events = {
       loaded: new Event('loaded')
     };
-    this._load(this.src);
+    load.call(this, this.src);
   }
 
-
-  /*
-      Predefined modes for drawing the image. These "modes" alter each channel
-      of a pixel.
-  
-      @return {Object}
-   */
-
-  Jimage.prototype.modes = {
+  modes = {
     normal: function(pixel) {
       return {
         r: pixel.r,
@@ -81,14 +62,7 @@ Jimage = (function() {
     }
   };
 
-
-  /*
-      `load` takes either a string that represents a path to an image or an
-      already created Jimage. Once the image is loaded the `loaded` event will
-      trigger.
-   */
-
-  Jimage.prototype._load = function(src) {
+  load = function(src) {
     var canvas, context, img;
     if (typeof src === 'object') {
       this.src = src.src;
@@ -102,36 +76,36 @@ Jimage = (function() {
       context = canvas.getContext('2d');
       img.onload = (function(_this) {
         return function(e) {
+          var data;
           img = e.target;
           context.drawImage(img, 0, 0);
+          data = context.getImageData(0, 0, img.width, img.height).data;
           _this.width = img.width;
           _this.height = img.height;
-          _this._data = context.getImageData(0, 0, img.width, img.height).data;
-          _this.pixels = _this._extractPixels();
+          _this.pixels = extractPixels(data, _this.width);
           return _this.element.dispatchEvent(_this.events.loaded);
         };
       })(this);
-      img.src = this.src;
+      img.src = src;
     }
   };
 
-  Jimage.prototype._extractPixels = function() {
-    var i, pixels, x, y, _, _i, _len, _ref;
+  extractPixels = function(data, width) {
+    var i, pixels, x, y, _, _i, _len;
     pixels = [];
     x = y = 0;
-    _ref = this._data;
-    for (i = _i = 0, _len = _ref.length; _i < _len; i = _i += 4) {
-      _ = _ref[i];
+    for (i = _i = 0, _len = data.length; _i < _len; i = _i += 4) {
+      _ = data[i];
       pixels.push({
         x: x,
         y: y,
-        r: this._data[i],
-        g: this._data[i + 1],
-        b: this._data[i + 2],
-        a: this._data[i + 3]
+        r: data[i],
+        g: data[i + 1],
+        b: data[i + 2],
+        a: data[i + 3]
       });
       x += 1;
-      if (x === this.width) {
+      if (x === width) {
         x = 0;
         y += 1;
       }
@@ -139,9 +113,9 @@ Jimage = (function() {
     return pixels;
   };
 
-  Jimage.prototype._mode = function(mode) {
-    if (mode in this.modes) {
-      mode = this.modes[mode];
+  getMode = function(mode) {
+    if (mode in modes) {
+      mode = modes[mode];
     } else if (typeof mode === 'function') {
       mode = mode;
     } else {
@@ -150,11 +124,14 @@ Jimage = (function() {
     return mode;
   };
 
-
-  /*
-      @param {Object} options - any option that was set when creating the
-          Jimage can be overwritten by passing them.
-   */
+  Jimage.prototype["export"] = function() {
+    return {
+      src: this.src,
+      width: this.width,
+      height: this.height,
+      pixels: this.pixels
+    };
+  };
 
   Jimage.prototype.draw = function(options) {
     var canvas, context, key, mode, p, pixel, scale, value, _i, _len, _ref, _ref1;
@@ -170,17 +147,13 @@ Jimage = (function() {
     }
     canvas = options.element != null ? document.getElementById(options.element) : this.element;
     if (canvas == null) {
-      throw new Error("Canvas \"" + element + "\" is invalid.");
+      throw new Error("Canvas '" + element + "' is invalid.");
     }
     scale = options.scale;
-    mode = this._mode(options.mode);
+    mode = getMode(options.mode);
     canvas.height = this.height * scale;
     canvas.width = this.width * scale;
     context = canvas.getContext('2d');
-
-    /*
-        Process each pixel in `pixels` through `mode` to alter each channel.
-     */
     _ref1 = this.pixels;
     for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
       pixel = _ref1[_i];
@@ -188,15 +161,6 @@ Jimage = (function() {
       context.fillStyle = "rgba(" + p.r + ", " + p.g + ", " + p.b + ", " + p.a + ")";
       context.fillRect(pixel.x * scale, pixel.y * scale, scale, scale);
     }
-  };
-
-  Jimage.prototype["export"] = function() {
-    return {
-      src: this.src,
-      width: this.width,
-      height: this.height,
-      pixels: this.pixels
-    };
   };
 
   return Jimage;
